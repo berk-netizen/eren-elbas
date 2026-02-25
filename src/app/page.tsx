@@ -1,101 +1,100 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from 'react';
+import { useLocalStorageState } from "@/hooks/useLocalStorageState";
+import { initialConfig, initialEvents } from "@/lib/dummyData";
+import { daysBetween, daysUntil } from "@/lib/utils";
+import { Card } from "@/components/ui/Card";
+import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
+import { AppConfig, AppEvent } from "@/lib/types";
+import { Heart, Calendar, ArrowRight, Image as ImageIcon } from "lucide-react";
+import Link from 'next/link';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [config, , isLoadedConfig] = useLocalStorageState<AppConfig>("eren_config", initialConfig);
+  const [events, , isLoadedEvents] = useLocalStorageState<AppEvent[]>("eren_events", initialEvents);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const [isAddOpen, setIsAddOpen] = useState(false);
+
+  // We should make sure we don't have hydration mismatch by waiting for client load, 
+  // but since we read from localStorage it might run right away on initial render anyway.
+  // We'll wrap in a component or just handle it if there's a flicker.
+  const daysTogether = config ? daysBetween(config.relationshipStartDate, new Date()) : 0;
+
+  const upcomingEvents = events
+    ? events
+      .map(e => ({ ...e, daysLeft: daysUntil(e.dateISO) }))
+      .filter(e => e.daysLeft >= 0)
+      .sort((a, b) => a.daysLeft - b.daysLeft)
+      .slice(0, 3)
+    : [];
+
+  if (!isLoadedConfig || !isLoadedEvents) return <div className="p-8 text-center text-gray-500 animate-pulse">Yükleniyor...</div>;
+
+  return (
+    <div className="flex flex-col gap-6">
+      <section>
+        <Card className="bg-gradient-to-br from-primary-500 to-primary-700 text-white border-none shadow-lg shadow-primary-500/30 text-center py-8">
+          <Heart className="mx-auto mb-4 animate-pulse text-white" fill="white" size={48} />
+          <p className="text-primary-100 font-medium mb-1">Birlikte Geçen</p>
+          <h2 className="text-5xl font-black tracking-tight">{daysTogether}</h2>
+          <p className="text-primary-100 font-medium mt-1">Muhteşem Gün</p>
+        </Card>
+      </section>
+
+      <section>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold">Yaklaşan Günler</h3>
+          <Link href="/etkinlikler" className="text-sm text-primary font-medium flex items-center gap-1 hover:underline">
+            Tümü <ArrowRight size={16} />
+          </Link>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <div className="flex flex-col gap-3">
+          {upcomingEvents.length > 0 ? (
+            upcomingEvents.map(event => (
+              <Card key={event.id} className="flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors cursor-pointer">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary flex items-center justify-center shrink-0">
+                    <Calendar size={20} />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm">{event.title}</h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {new Date(event.dateISO).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-bold text-primary">{event.daysLeft}</div>
+                  <div className="text-xs text-gray-500">gün</div>
+                </div>
+              </Card>
+            ))
+          ) : (
+            <Card className="py-8 text-center text-gray-500 border-dashed">
+              Yaklaşan etkinlik bulunmuyor.
+            </Card>
+          )}
+        </div>
+      </section>
+
+      <FloatingActionButton onClick={() => setIsAddOpen(true)} />
+
+      <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="Hızlı Ekle">
+        <div className="flex flex-col gap-3">
+          <Button variant="outline" className="justify-start gap-3 h-14" onClick={() => { setIsAddOpen(false); /* TODO Route */ }}>
+            <Calendar className="text-primary" />
+            Yeni Etkinlik Ekle
+          </Button>
+          <Button variant="outline" className="justify-start gap-3 h-14" onClick={() => { setIsAddOpen(false); /* TODO Route */ }}>
+            <ImageIcon className="text-primary" />
+            Yeni Anı Ekle
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
