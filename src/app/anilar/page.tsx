@@ -70,22 +70,55 @@ export default function MemoriesPage() {
         const dateISO = formData.get('dateISO') as string;
         const description = formData.get('description') as string;
 
+        let imageUrl = previewImage;
+
+        // If it's a new Base64 image, upload it to Supabase Storage
+        if (previewImage && previewImage.startsWith('data:image')) {
+            const fileInput = fileInputRef.current;
+            const file = fileInput?.files?.[0];
+
+            if (file) {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+                const filePath = `${fileName}`;
+
+                const { error: uploadError } = await supabase.storage
+                    .from('photos')
+                    .upload(filePath, file);
+
+                if (uploadError) {
+                    alert("Görsel yüklenemedi: " + uploadError.message);
+                    return;
+                }
+
+                const { data: urlData } = supabase.storage
+                    .from('photos')
+                    .getPublicUrl(filePath);
+
+                imageUrl = urlData.publicUrl;
+            }
+        }
+
         if (editingMemory) {
             const { error } = await supabase
                 .from('memories')
-                .update({ title, dateISO, description, image: previewImage })
+                .update({ title, dateISO, description, image: imageUrl })
                 .eq('id', editingMemory.id);
 
             if (!error) {
-                setMemories(memories.map(m => m.id === editingMemory.id ? { ...m, title, dateISO, description, image: previewImage } : m));
+                setMemories(memories.map(m => m.id === editingMemory.id ? { ...m, title, dateISO, description, image: imageUrl } : m));
+            } else {
+                alert("Güncelleme hatası: " + error.message);
             }
         } else {
             const { data, error } = await supabase
                 .from('memories')
-                .insert([{ title, dateISO, description, image: previewImage }])
+                .insert([{ title, dateISO, description, image: imageUrl }])
                 .select();
 
-            if (!error && data) {
+            if (error) {
+                alert("Hata: " + error.message);
+            } else if (data) {
                 setMemories([data[0], ...memories]);
             }
         }
@@ -150,7 +183,7 @@ export default function MemoriesPage() {
                         )}
                     </div>
 
-                    <div className="pt-4">
+                    <div className="pt-4 pb-10">
                         <Button type="submit" className="w-full">
                             {editingMemory ? "Güncelle" : "Ekle"}
                         </Button>

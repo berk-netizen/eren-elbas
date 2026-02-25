@@ -90,8 +90,10 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-lg font-bold text-primary">{event.daysLeft}</div>
-                  <div className="text-xs text-gray-500">gün</div>
+                  <div className="text-lg font-bold text-primary">
+                    {event.daysLeft === 0 ? "Bugün!" : event.daysLeft}
+                  </div>
+                  <div className="text-xs text-gray-500">{event.daysLeft === 0 ? "" : "gün"}</div>
                 </div>
               </Card>
             ))

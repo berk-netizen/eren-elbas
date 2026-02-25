@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from "@/lib/supabase";
 import { AppEvent } from "@/lib/types";
+import { daysUntil } from "@/lib/utils";
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -63,7 +64,9 @@ export default function EventsPage() {
                 .insert([{ title, dateISO, iconType: 'heart' }])
                 .select();
 
-            if (!error && data) {
+            if (error) {
+                alert("Hata: " + error.message);
+            } else if (data) {
                 setEvents([...events, data[0]]);
             }
         }
@@ -96,14 +99,17 @@ export default function EventsPage() {
                 <section key={key}>
                     <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">{key}</h3>
                     <div className="flex flex-col gap-3">
-                        {groupedEvents[key].map((event: AppEvent) => (
-                            <EventCard
-                                key={event.id}
-                                event={event}
-                                onEdit={handleOpenEdit}
-                                onDelete={handleDelete}
-                            />
-                        ))}
+                        {groupedEvents[key].map((event: AppEvent) => {
+                            const daysLeft = daysUntil(event.dateISO);
+                            return (
+                                <EventCard
+                                    key={event.id}
+                                    event={{ ...event, daysLeft }}
+                                    onEdit={handleOpenEdit}
+                                    onDelete={handleDelete}
+                                />
+                            );
+                        })}
                     </div>
                 </section>
             ))}

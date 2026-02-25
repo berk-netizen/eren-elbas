@@ -7,6 +7,7 @@ export interface AppEvent {
     title: string;
     dateISO: string;
     iconType: string;
+    daysLeft?: number;
 }
 
 export interface AppMemory {
