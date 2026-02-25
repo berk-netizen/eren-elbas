@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from 'react';
-import { useLocalStorageState } from "@/hooks/useLocalStorageState";
-import { initialConfig, initialEvents } from "@/lib/dummyData";
+import { useState, useEffect } from 'react';
+import { supabase } from "@/lib/supabase";
 import { daysBetween, daysUntil } from "@/lib/utils";
 import { Card } from "@/components/ui/Card";
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
@@ -11,16 +10,39 @@ import { Button } from "@/components/ui/Button";
 import { AppConfig, AppEvent } from "@/lib/types";
 import { Heart, Calendar, ArrowRight, Image as ImageIcon } from "lucide-react";
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  const [config, , isLoadedConfig] = useLocalStorageState<AppConfig>("eren_config", initialConfig);
-  const [events, , isLoadedEvents] = useLocalStorageState<AppEvent[]>("eren_events", initialEvents);
-
+  const router = useRouter();
+  const [config, setConfig] = useState<AppConfig | null>(null);
+  const [events, setEvents] = useState<AppEvent[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
 
-  // We should make sure we don't have hydration mismatch by waiting for client load, 
-  // but since we read from localStorage it might run right away on initial render anyway.
-  // We'll wrap in a component or just handle it if there's a flicker.
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const { data: configData } = await supabase
+          .from('config')
+          .select('*')
+          .eq('id', '00000000-0000-0000-0000-000000000000')
+          .single();
+
+        const { data: eventsData } = await supabase
+          .from('events')
+          .select('*');
+
+        if (configData) setConfig(configData);
+        if (eventsData) setEvents(eventsData);
+      } catch (error) {
+        console.error("Fetch error:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
   const daysTogether = config ? daysBetween(config.relationshipStartDate, new Date()) : 0;
 
   const upcomingEvents = events
@@ -31,7 +53,7 @@ export default function Home() {
       .slice(0, 3)
     : [];
 
-  if (!isLoadedConfig || !isLoadedEvents) return <div className="p-8 text-center text-gray-500 animate-pulse">Yükleniyor...</div>;
+  if (loading) return <div className="p-8 text-center text-gray-500 animate-pulse">Yükleniyor...</div>;
 
   return (
     <div className="flex flex-col gap-6">
@@ -85,11 +107,11 @@ export default function Home() {
 
       <Modal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} title="Hızlı Ekle">
         <div className="flex flex-col gap-3">
-          <Button variant="outline" className="justify-start gap-3 h-14" onClick={() => { setIsAddOpen(false); /* TODO Route */ }}>
+          <Button variant="outline" className="justify-start gap-3 h-14" onClick={() => { setIsAddOpen(false); router.push('/etkinlikler'); }}>
             <Calendar className="text-primary" />
             Yeni Etkinlik Ekle
           </Button>
-          <Button variant="outline" className="justify-start gap-3 h-14" onClick={() => { setIsAddOpen(false); /* TODO Route */ }}>
+          <Button variant="outline" className="justify-start gap-3 h-14" onClick={() => { setIsAddOpen(false); router.push('/anilar'); }}>
             <ImageIcon className="text-primary" />
             Yeni Anı Ekle
           </Button>

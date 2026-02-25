@@ -1,19 +1,29 @@
 "use client";
 
-import { useState } from 'react';
-import { useLocalStorageState } from "@/hooks/useLocalStorageState";
-import { initialEvents } from "@/lib/dummyData";
+import { useState, useEffect } from 'react';
+import { supabase } from "@/lib/supabase";
+import { AppEvent } from "@/lib/types";
 import { FloatingActionButton } from "@/components/ui/FloatingActionButton";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { EventCard } from "@/components/EventCard";
-import { AppEvent } from "@/lib/types";
 
 export default function EventsPage() {
-    const [events, setEvents, isLoaded] = useLocalStorageState<AppEvent[]>("eren_events", initialEvents);
+    const [events, setEvents] = useState<AppEvent[]>([]);
+    const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingEvent, setEditingEvent] = useState<AppEvent | null>(null);
+
+    useEffect(() => {
+        fetchEvents();
+    }, []);
+
+    async function fetchEvents() {
+        const { data } = await supabase.from('events').select('*');
+        if (data) setEvents(data);
+        setLoading(false);
+    }
 
     const handleOpenAdd = () => {
         setEditingEvent(null);
@@ -25,98 +35,85 @@ export default function EventsPage() {
         setIsModalOpen(true);
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (confirm('Bu etkinliği silmek istediğinize emin misiniz?')) {
-            setEvents(events.filter(e => e.id !== id));
+            const { error } = await supabase.from('events').delete().eq('id', id);
+            if (!error) setEvents(events.filter(e => e.id !== id));
         }
     };
 
-    const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
         const title = formData.get('title') as string;
         const dateISO = formData.get('dateISO') as string;
 
         if (editingEvent) {
-            setEvents(events.map(ev => ev.id === editingEvent.id ? { ...ev, title, dateISO } : ev));
+            const { error } = await supabase
+                .from('events')
+                .update({ title, dateISO })
+                .eq('id', editingEvent.id);
+
+            if (!error) {
+                setEvents(events.map(e => e.id === editingEvent.id ? { ...e, title, dateISO } : e));
+            }
         } else {
-            setEvents([...events, { id: Date.now().toString(), title, dateISO, iconType: 'calendar' }]);
+            const { data, error } = await supabase
+                .from('events')
+                .insert([{ title, dateISO, iconType: 'heart' }])
+                .select();
+
+            if (!error && data) {
+                setEvents([...events, data[0]]);
+            }
         }
         setIsModalOpen(false);
     };
 
-    // Safe fallback if events is null during hydration
-    const activeEvents = events || [];
+    if (loading) return <div className="p-8 text-center text-gray-500 animate-pulse">Yükleniyor...</div>;
 
-    // Group events by month/year
-    const groupedEvents = activeEvents.reduce((acc, current) => {
-        const d = new Date(current.dateISO);
-        const key = `${d.getFullYear()}-${d.getMonth()}`;
-        if (!acc[key]) acc[key] = [];
-        acc[key].push(current);
+    const groupedEvents = events.reduce((acc: Record<string, AppEvent[]>, event) => {
+        const date = new Date(event.dateISO);
+        const monthYear = date.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+        if (!acc[monthYear]) acc[monthYear] = [];
+        acc[monthYear].push(event);
         return acc;
-    }, {} as Record<string, AppEvent[]>);
+    }, {});
 
-    // Sort groups by date descending
     const sortedKeys = Object.keys(groupedEvents).sort((a, b) => {
-        const [yearA, monthA] = a.split('-').map(Number);
-        const [yearB, monthB] = b.split('-').map(Number);
-        if (yearA !== yearB) return yearB - yearA;
-        return monthB - monthA;
+        const dateA = new Date(groupedEvents[a][0].dateISO);
+        const dateB = new Date(groupedEvents[b][0].dateISO);
+        return dateB.getTime() - dateA.getTime();
     });
-
-    if (!isLoaded) return <div className="p-8 text-center text-gray-500 animate-pulse">Yükleniyor...</div>;
 
     return (
         <div className="flex flex-col gap-6">
             {sortedKeys.length === 0 && (
-                <div className="text-center text-gray-500 py-10 mt-10">Hiç etkinlik yok. Eklemek için + butonuna tıkla.</div>
+                <div className="text-center text-gray-500 py-10 mt-10">Henüz bir etkinlik yok.</div>
             )}
 
-            {sortedKeys.map(key => {
-                const [year, month] = key.split('-');
-                const monthName = new Date(Number(year), Number(month)).toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
-
-                // Sort events in the group by date
-                const groupEvents = groupedEvents[key].sort((a, b) => new Date(a.dateISO).getTime() - new Date(b.dateISO).getTime());
-
-                return (
-                    <div key={key} className="flex flex-col gap-3">
-                        <h3 className="sticky top-16 bg-background/95 backdrop-blur-sm py-2 text-sm font-bold text-gray-500 z-10 px-1 uppercase tracking-wider">
-                            {monthName}
-                        </h3>
-                        <div className="flex flex-col gap-4">
-                            {groupEvents.map(event => (
-                                <EventCard
-                                    key={event.id}
-                                    event={event}
-                                    onEdit={handleOpenEdit}
-                                    onDelete={handleDelete}
-                                />
-                            ))}
-                        </div>
+            {sortedKeys.map(key => (
+                <section key={key}>
+                    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 px-1">{key}</h3>
+                    <div className="flex flex-col gap-3">
+                        {groupedEvents[key].map((event: AppEvent) => (
+                            <EventCard
+                                key={event.id}
+                                event={event}
+                                onEdit={handleOpenEdit}
+                                onDelete={handleDelete}
+                            />
+                        ))}
                     </div>
-                );
-            })}
+                </section>
+            ))}
 
             <FloatingActionButton onClick={handleOpenAdd} />
 
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={editingEvent ? "Etkinliği Düzenle" : "Yeni Etkinlik Ekle"}>
                 <form onSubmit={handleSave} className="flex flex-col gap-4 mt-2">
-                    <Input
-                        name="title"
-                        label="Etkinlik Adı"
-                        defaultValue={editingEvent?.title}
-                        placeholder="Örn: Doğum Günü"
-                        required
-                    />
-                    <Input
-                        name="dateISO"
-                        label="Tarih"
-                        type="date"
-                        defaultValue={editingEvent?.dateISO}
-                        required
-                    />
+                    <Input name="title" label="Etkinlik Adı" defaultValue={editingEvent?.title} required />
+                    <Input name="dateISO" label="Tarih" type="date" defaultValue={editingEvent?.dateISO} required />
                     <div className="pt-4">
                         <Button type="submit" className="w-full">
                             {editingEvent ? "Güncelle" : "Ekle"}
