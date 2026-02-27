@@ -18,8 +18,17 @@ export interface AppMemory {
     image: string; // Base64
 }
 
+export interface AppProfilePreferences {
+    showEvents?: boolean;
+    showMemories?: boolean;
+    customTags?: string[];
+}
+
 export interface AppProfile {
     name: string;
+    avatar_url?: string;
+    bio?: string;
+    preferences?: AppProfilePreferences;
     ringSize: string;
     coffeePreference: string;
     favoriteColor: string;
