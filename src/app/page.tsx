@@ -37,8 +37,10 @@ export default function Home() {
 
         if (configData) setConfig(configData);
         if (eventsData) setEvents(eventsData);
+        else setEvents([]);
       } catch (error) {
         console.error("Fetch error:", error);
+        setEvents([]);
       } finally {
         setLoading(false);
       }
@@ -50,8 +52,10 @@ export default function Home() {
     ? daysBetween(config.relationshipStartDate, new Date())
     : 0;
 
-  const upcomingEvents = (events || [])
-    .map(e => ({ ...e, daysLeft: daysUntil(e?.dateISO) }))
+  const safeEvents = events || [];
+  const upcomingEvents = safeEvents
+    .filter(e => e && e.dateISO)
+    .map(e => ({ ...e, daysLeft: daysUntil(e.dateISO) }))
     .filter(e => e.daysLeft >= 0)
     .sort((a, b) => a.daysLeft - b.daysLeft)
     .slice(0, 3);
@@ -88,7 +92,7 @@ export default function Home() {
                   <div>
                     <h4 className="font-semibold text-sm">{event.title}</h4>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {new Date(event.dateISO).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })}
+                      {event?.dateISO ? new Date(event.dateISO).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' }) : ""}
                     </p>
                   </div>
                 </div>

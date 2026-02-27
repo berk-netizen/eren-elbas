@@ -21,9 +21,18 @@ export default function EventsPage() {
     }, []);
 
     async function fetchEvents() {
-        const { data } = await supabase.from('events').select('*');
-        if (data) setEvents(data);
-        setLoading(false);
+        try {
+            const { data } = await supabase.from('events').select('*');
+            if (data) {
+                setEvents(data);
+            } else {
+                setEvents([]);
+            }
+        } catch {
+            setEvents([]);
+        } finally {
+            setLoading(false);
+        }
     }
 
     const handleOpenAdd = () => {
@@ -75,7 +84,9 @@ export default function EventsPage() {
 
     if (loading) return <div className="p-8 text-center text-gray-500 animate-pulse">Yükleniyor...</div>;
 
-    const groupedEvents = events.reduce((acc: Record<string, AppEvent[]>, event) => {
+    const safeEvents = events || [];
+    const groupedEvents = safeEvents.reduce((acc: Record<string, AppEvent[]>, event) => {
+        if (!event?.dateISO) return acc;
         const date = new Date(event.dateISO);
         const monthYear = date.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
         if (!acc[monthYear]) acc[monthYear] = [];
@@ -84,8 +95,8 @@ export default function EventsPage() {
     }, {});
 
     const sortedKeys = Object.keys(groupedEvents).sort((a, b) => {
-        const dateA = new Date(groupedEvents[a][0].dateISO);
-        const dateB = new Date(groupedEvents[b][0].dateISO);
+        const dateA = new Date(groupedEvents[a]?.[0]?.dateISO || 0);
+        const dateB = new Date(groupedEvents[b]?.[0]?.dateISO || 0);
         return dateB.getTime() - dateA.getTime();
     });
 

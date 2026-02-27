@@ -25,13 +25,22 @@ export default function MemoriesPage() {
     }, []);
 
     async function fetchMemories() {
-        const { data, error } = await supabase
-            .from('memories')
-            .select('*')
-            .order('dateISO', { ascending: false });
-        if (error) console.error('Fetch error:', error.message);
-        if (data) setMemories(data);
-        setLoading(false);
+        try {
+            const { data, error } = await supabase
+                .from('memories')
+                .select('*')
+                .order('dateISO', { ascending: false });
+            if (error) console.error('Fetch error:', error.message);
+            if (data) {
+                setMemories(data);
+            } else {
+                setMemories([]); // Guard against null
+            }
+        } catch {
+            setMemories([]);
+        } finally {
+            setLoading(false);
+        }
     }
 
     const handleOpenAdd = () => {
@@ -156,8 +165,9 @@ export default function MemoriesPage() {
 
     if (loading) return <div className="p-8 text-center text-gray-500 animate-pulse">Yükleniyor...</div>;
 
-    const sortedMemories = [...memories].sort(
-        (a, b) => new Date(b.dateISO).getTime() - new Date(a.dateISO).getTime()
+    const safeMemories = memories || [];
+    const sortedMemories = [...safeMemories].sort(
+        (a, b) => new Date(b?.dateISO || 0).getTime() - new Date(a?.dateISO || 0).getTime()
     );
 
     return (
