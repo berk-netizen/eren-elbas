@@ -24,7 +24,7 @@ function parseLocalDate(date: Date | string | null | undefined): Date {
         const d = new Date(year, month - 1, day, 0, 0, 0, 0);
         if (isNaN(d.getTime())) return new Date(); // Check for parsing failure
         return d;
-    } catch (e) {
+    } catch {
         return new Date(); // Failsafe
     }
 }

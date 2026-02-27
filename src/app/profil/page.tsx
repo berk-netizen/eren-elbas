@@ -21,31 +21,25 @@ export default function ProfilePage() {
     useEffect(() => {
         setIsMounted(true);
         async function fetchProfile() {
-            const { data } = await supabase
-                .from('profile')
-                .select('*')
-                .eq('id', PROFILE_ID)
-                .single();
+            try {
+                const { data, error } = await supabase
+                    .from('profile')
+                    .select('*')
+                    .eq('id', PROFILE_ID)
+                    .single();
 
-            if (data) {
-                setProfile(data);
-            } else {
-                setProfile({
-                    id: PROFILE_ID,
-                    name: "İsim Soyisim",
-                    ringSize: "-",
-                    coffeePreference: "-",
-                    favoriteColor: "-",
-                    favoriteFood: "-",
-                    favoritePolitician: "-",
-                    supportedParty: "-",
-                    favoriteYDCharacter: "-",
-                    favoriteTimePeriod: "-",
-                    firstDateLocation: "-",
-                    importantNote: "-"
-                } as AppProfile);
+                if (data && !error) {
+                    setProfile(data);
+                } else {
+                    console.warn("Profil bulunamadı veya tablo yok, varsayılan yükleniyor.");
+                    setProfile(null);
+                }
+            } catch (err) {
+                console.error("Fetch hatası:", err);
+                setProfile(null);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         }
         fetchProfile();
     }, []);
@@ -97,6 +91,19 @@ export default function ProfilePage() {
         importantNote: "-"
     } as AppProfile;
 
+    // Strict optional chaining to absolutely prevent "Cannot read properties of null"
+    const displayName = safeProfile?.name || "İsim Soyisim";
+    const displayRingSize = safeProfile?.ringSize || "-";
+    const displayCoffee = safeProfile?.coffeePreference || "-";
+    const displayColor = safeProfile?.favoriteColor || "-";
+    const displayFood = safeProfile?.favoriteFood || "-";
+    const displayPolitician = safeProfile?.favoritePolitician || "-";
+    const displayParty = safeProfile?.supportedParty || "-";
+    const displayCharacter = safeProfile?.favoriteYDCharacter || "-";
+    const displayTimePeriod = safeProfile?.favoriteTimePeriod || "-";
+    const displayLocation = safeProfile?.firstDateLocation || "-";
+    const displayNote = safeProfile?.importantNote || "-";
+
     return (
         <div className="flex flex-col gap-6">
             <Card className="flex flex-col items-center justify-center py-8 bg-gradient-to-br from-primary-500 to-primary-700 text-white border-none shadow-lg shadow-primary-500/30">
@@ -118,82 +125,82 @@ export default function ProfilePage() {
                 <Card className="flex flex-col p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group" onClick={() => setIsEditOpen(true)}>
                     <div className="text-primary mb-2"><Gem size={24} /></div>
                     <p className="text-xs text-gray-500 mb-1">Yüzük Ölçüsü</p>
-                    <p className="font-bold text-sm sm:text-base">{safeProfile.ringSize}</p>
+                    <p className="font-bold text-sm sm:text-base">{displayRingSize}</p>
                 </Card>
 
                 <Card className="flex flex-col p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group" onClick={() => setIsEditOpen(true)}>
                     <div className="text-primary mb-2"><Coffee size={24} /></div>
                     <p className="text-xs text-gray-500 mb-1">Kahve Tercihi</p>
-                    <p className="font-bold text-sm sm:text-base">{safeProfile.coffeePreference}</p>
+                    <p className="font-bold text-sm sm:text-base">{displayCoffee}</p>
                 </Card>
 
                 <Card className="flex flex-col p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group" onClick={() => setIsEditOpen(true)}>
                     <div className="text-primary mb-2"><Palette size={24} /></div>
                     <p className="text-xs text-gray-500 mb-1">Favori Renk</p>
-                    <p className="font-bold text-sm sm:text-base">{safeProfile.favoriteColor}</p>
+                    <p className="font-bold text-sm sm:text-base">{displayColor}</p>
                 </Card>
 
                 <Card className="flex flex-col p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group" onClick={() => setIsEditOpen(true)}>
                     <div className="text-primary mb-2"><Utensils size={24} /></div>
                     <p className="text-xs text-gray-500 mb-1">En Sevdiği Yemek</p>
-                    <p className="font-bold text-sm sm:text-base">{safeProfile.favoriteFood}</p>
+                    <p className="font-bold text-sm sm:text-base">{displayFood}</p>
                 </Card>
 
                 <Card className="flex flex-col p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group" onClick={() => setIsEditOpen(true)}>
                     <div className="text-primary mb-2"><Landmark size={24} /></div>
                     <p className="text-xs text-gray-500 mb-1">En Sevdiği Siyasetçi</p>
-                    <p className="font-bold text-sm sm:text-base">{safeProfile.favoritePolitician}</p>
+                    <p className="font-bold text-sm sm:text-base">{displayPolitician}</p>
                 </Card>
 
                 <Card className="flex flex-col p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group" onClick={() => setIsEditOpen(true)}>
                     <div className="text-primary mb-2"><Flag size={24} /></div>
                     <p className="text-xs text-gray-500 mb-1">Tuttuğu Parti</p>
-                    <p className="font-bold text-sm sm:text-base">{safeProfile.supportedParty}</p>
+                    <p className="font-bold text-sm sm:text-base">{displayParty}</p>
                 </Card>
 
                 <Card className="flex flex-col p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group" onClick={() => setIsEditOpen(true)}>
                     <div className="text-primary mb-2"><Tv size={24} /></div>
                     <p className="text-xs text-gray-500 mb-1">Favori YD Karakteri</p>
-                    <p className="font-bold text-sm sm:text-base">{safeProfile.favoriteYDCharacter}</p>
+                    <p className="font-bold text-sm sm:text-base">{displayCharacter}</p>
                 </Card>
 
                 <Card className="flex flex-col p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group" onClick={() => setIsEditOpen(true)}>
                     <div className="text-primary mb-2"><Clock size={24} /></div>
                     <p className="text-xs text-gray-500 mb-1">Favori Zaman Dilimi</p>
-                    <p className="font-bold text-sm sm:text-base">{safeProfile.favoriteTimePeriod}</p>
+                    <p className="font-bold text-sm sm:text-base">{displayTimePeriod}</p>
                 </Card>
 
                 <Card className="flex flex-col p-4 col-span-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group" onClick={() => setIsEditOpen(true)}>
                     <div className="text-primary mb-2"><MapPin size={24} /></div>
                     <p className="text-xs text-gray-500 mb-1">İlk Date Konumu</p>
-                    <p className="font-bold text-sm sm:text-base">{safeProfile.firstDateLocation}</p>
+                    <p className="font-bold text-sm sm:text-base">{displayLocation}</p>
                 </Card>
 
                 <Card className="flex flex-col p-4 col-span-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group" onClick={() => setIsEditOpen(true)}>
                     <div className="text-primary mb-2"><StickyNote size={24} /></div>
                     <p className="text-xs text-gray-500 mb-1">Önemli Not</p>
-                    <p className="font-bold text-sm sm:text-base whitespace-pre-wrap">{safeProfile.importantNote}</p>
+                    <p className="font-bold text-sm sm:text-base whitespace-pre-wrap">{displayNote}</p>
                 </Card>
             </div>
 
             <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="Profili Düzenle">
                 <form onSubmit={handleSave} className="flex flex-col gap-4 mt-2">
-                    <Input name="name" label="İsim Soyisim" defaultValue={safeProfile.name} required />
-                    <Input name="ringSize" label="Yüzük Ölçüsü" defaultValue={safeProfile.ringSize} />
-                    <Input name="coffeePreference" label="Kahve Tercihi" defaultValue={safeProfile.coffeePreference} />
-                    <Input name="favoriteColor" label="Favori Renk" defaultValue={safeProfile.favoriteColor} />
-                    <Input name="favoriteFood" label="En Sevdiği Yemek" defaultValue={safeProfile.favoriteFood} required />
-                    <Input name="favoritePolitician" label="En Sevdiği Siyasetçi" defaultValue={safeProfile.favoritePolitician} />
-                    <Input name="supportedParty" label="Tuttuğu Parti" defaultValue={safeProfile.supportedParty} />
-                    <Input name="favoriteYDCharacter" label="Favori Yaprak Dökümü Karakteri" defaultValue={safeProfile.favoriteYDCharacter} />
-                    <Input name="favoriteTimePeriod" label="En Sevdiği Zaman Dilimi" defaultValue={safeProfile.favoriteTimePeriod} />
-                    <Input name="firstDateLocation" label="İlk Date Konumu" defaultValue={safeProfile.firstDateLocation} />
+                    <Input name="name" label="İsim Soyisim" defaultValue={displayName} required />
+                    <Input name="ringSize" label="Yüzük Ölçüsü" defaultValue={displayRingSize} />
+                    <Input name="coffeePreference" label="Kahve Tercihi" defaultValue={displayCoffee} />
+                    <Input name="favoriteColor" label="Favori Renk" defaultValue={displayColor} />
+                    <Input name="favoriteFood" label="En Sevdiği Yemek" defaultValue={displayFood} required />
+                    <Input name="favoritePolitician" label="En Sevdiği Siyasetçi" defaultValue={displayPolitician} />
+                    <Input name="supportedParty" label="Tuttuğu Parti" defaultValue={displayParty} />
+                    <Input name="favoriteYDCharacter" label="Favori Yaprak Dökümü Karakteri" defaultValue={displayCharacter} />
+                    <Input name="favoriteTimePeriod" label="En Sevdiği Zaman Dilimi" defaultValue={displayTimePeriod} />
+                    <Input name="firstDateLocation" label="İlk Date Konumu" defaultValue={displayLocation} />
 
                     <div className="w-full">
                         <label className="block text-sm font-medium mb-1.5">Önemli Not</label>
                         <textarea
                             name="importantNote"
-                            defaultValue={safeProfile.importantNote}
+                            defaultValue={displayNote}
                             className="w-full rounded-xl bg-gray-50 dark:bg-[#2C2C2E] border border-transparent focus:border-primary focus:ring-1 focus:ring-primary p-4 transition-all text-base outline-none resize-y min-h-[80px]"
                         />
                     </div>
