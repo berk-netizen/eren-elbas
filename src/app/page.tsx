@@ -43,15 +43,15 @@ export default function Home() {
     fetchData();
   }, []);
 
-  const daysTogether = config ? daysBetween(config.relationshipStartDate, new Date()) : 0;
+  const daysTogether = config?.relationshipStartDate
+    ? daysBetween(config.relationshipStartDate, new Date())
+    : 0;
 
-  const upcomingEvents = events
-    ? events
-      .map(e => ({ ...e, daysLeft: daysUntil(e.dateISO) }))
-      .filter(e => e.daysLeft >= 0)
-      .sort((a, b) => a.daysLeft - b.daysLeft)
-      .slice(0, 3)
-    : [];
+  const upcomingEvents = (events || [])
+    .map(e => ({ ...e, daysLeft: daysUntil(e?.dateISO) }))
+    .filter(e => e.daysLeft >= 0)
+    .sort((a, b) => a.daysLeft - b.daysLeft)
+    .slice(0, 3);
 
   if (loading) return <div className="p-8 text-center text-gray-500 animate-pulse">Yükleniyor...</div>;
 

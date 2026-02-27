@@ -19,7 +19,12 @@ export default function SettingsPage() {
 
     async function fetchConfig() {
         const { data } = await supabase.from('config').select('*').eq('id', CONFIG_ID).single();
-        if (data) setConfig(data);
+        if (data) {
+            setConfig(data);
+        } else {
+            // Provide a sensible default if no config exists yet in Supabase
+            setConfig({ relationshipStartDate: new Date().toISOString().split('T')[0] } as AppConfig);
+        }
         setLoading(false);
     }
 
@@ -27,11 +32,12 @@ export default function SettingsPage() {
         const relationshipStartDate = e.target.value;
         const { error } = await supabase
             .from('config')
-            .update({ relationshipStartDate })
-            .eq('id', CONFIG_ID);
+            .upsert({ id: CONFIG_ID, relationshipStartDate });
 
         if (!error) {
             setConfig(prev => prev ? { ...prev, relationshipStartDate } : { relationshipStartDate });
+        } else {
+            console.error("Failed to save config:", error);
         }
     };
 
