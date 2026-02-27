@@ -21,6 +21,7 @@ export const metadata: Metadata = {
 import { AppShell } from "@/components/AppShell";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
+import { ClientOnly } from "@/components/ClientOnly";
 
 export default function RootLayout({
   children,
@@ -33,11 +34,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AppShell>
-          <Header />
-          <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 pb-20">
-            {children}
-          </main>
-          <BottomNav />
+          <ClientOnly>
+            <Header />
+            <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 pb-20">
+              {children}
+            </main>
+            <BottomNav />
+          </ClientOnly>
         </AppShell>
       </body>
     </html>
