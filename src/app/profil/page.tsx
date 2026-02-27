@@ -26,6 +26,21 @@ export default function ProfilePage() {
 
             if (data) {
                 setProfile(data);
+            } else {
+                setProfile({
+                    id: PROFILE_ID,
+                    name: "İsim Soyisim",
+                    ringSize: "-",
+                    coffeePreference: "-",
+                    favoriteColor: "-",
+                    favoriteFood: "-",
+                    favoritePolitician: "-",
+                    supportedParty: "-",
+                    favoriteYDCharacter: "-",
+                    favoriteTimePeriod: "-",
+                    firstDateLocation: "-",
+                    importantNote: "-"
+                } as AppProfile);
             }
             setLoading(false);
         }
@@ -36,6 +51,7 @@ export default function ProfilePage() {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
         const newProfile = {
+            id: PROFILE_ID,
             name: formData.get('name') as string,
             ringSize: formData.get('ringSize') as string,
             coffeePreference: formData.get('coffeePreference') as string,
@@ -51,20 +67,32 @@ export default function ProfilePage() {
 
         const { error } = await supabase
             .from('profile')
-            .update(newProfile)
-            .eq('id', PROFILE_ID);
+            .upsert(newProfile);
 
         if (!error) {
             setProfile(prev => prev ? { ...prev, ...newProfile } : newProfile as AppProfile);
             setIsEditOpen(false);
         } else {
+            console.error("Profil güncellenirken hata:", error);
             alert("Profil güncellenirken bir hata oluştu.");
         }
     };
 
     if (loading) return <div className="p-8 text-center text-gray-500 animate-pulse">Yükleniyor...</div>;
 
-    const safeProfile = profile!;
+    const safeProfile = profile || {
+        name: "İsim Soyisim",
+        ringSize: "-",
+        coffeePreference: "-",
+        favoriteColor: "-",
+        favoriteFood: "-",
+        favoritePolitician: "-",
+        supportedParty: "-",
+        favoriteYDCharacter: "-",
+        favoriteTimePeriod: "-",
+        firstDateLocation: "-",
+        importantNote: "-"
+    } as AppProfile;
 
     return (
         <div className="flex flex-col gap-6">
