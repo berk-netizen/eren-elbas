@@ -19,7 +19,10 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
 
+  const [isMounted, setIsMounted] = useState(false);
+
   useEffect(() => {
+    setIsMounted(true);
     async function fetchData() {
       try {
         const { data: configData } = await supabase
@@ -53,7 +56,7 @@ export default function Home() {
     .sort((a, b) => a.daysLeft - b.daysLeft)
     .slice(0, 3);
 
-  if (loading) return <div className="p-8 text-center text-gray-500 animate-pulse">Yükleniyor...</div>;
+  if (!isMounted || loading) return <div className="p-8 text-center text-gray-500 animate-pulse">Yükleniyor...</div>;
 
   return (
     <div className="flex flex-col gap-6">

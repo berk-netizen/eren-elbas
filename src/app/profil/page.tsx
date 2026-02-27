@@ -16,7 +16,10 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState(true);
     const [isEditOpen, setIsEditOpen] = useState(false);
 
+    const [isMounted, setIsMounted] = useState(false);
+
     useEffect(() => {
+        setIsMounted(true);
         async function fetchProfile() {
             const { data } = await supabase
                 .from('profile')
@@ -78,7 +81,7 @@ export default function ProfilePage() {
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-gray-500 animate-pulse">Yükleniyor...</div>;
+    if (!isMounted || loading) return <div className="p-8 text-center text-gray-500 animate-pulse">Yükleniyor...</div>;
 
     const safeProfile = profile || {
         name: "İsim Soyisim",
